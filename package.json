@@ -1,0 +1,18 @@
+{
+  "name": "standardserver",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "angular-md5": "^0.1.10",
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "request": "^2.81.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

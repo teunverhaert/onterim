@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Onterim | Jobs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css.map">
+
+    <script>
+        var app = angular.module('app', []);
+
+        parseParams = function () {
+            var params = {}, queryString = location.hash.substring(1), regex = /([^&=]+)=([^&]*)/g, m;
+            while (m = regex.exec(queryString)) {
+                params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+            }
+            return params;
+        };
+
+        app.controller('JobController', function ($scope, $http, $location) {
+            $scope.loaded = 0;
+
+            $scope.showLoading = true;
+            $scope.showTiles = false;
+
+            $scope.jobCount;
+            $scope.jobList = [];
+
+            $scope.jobsToLoad = 3;
+
+            $scope.setLoaded = function () {
+                $scope.loaded = $scope.jobList.length / $scope.jobsToLoad * 100;
+                if ($scope.loaded == 100) {
+                    $scope.showLoading = false;
+                    $scope.showTiles = true;
+                }
+            };
+
+            $scope.loadMoreJobs = function (amount) {
+                $scope.getJobs($scope.jobList.length, amount, false);
+            };
+
+            $scope.getJobs = function (startindex, amount, firstLoad) {
+                if ($scope.jobList.length + amount > $scope.jobCount)
+                    amount = $scope.jobCount - $scope.jobList.length;
+                for (var i = startindex; i < amount + startindex; i++) {
+                    var counter = $scope.jobList.length;
+                    var indexString = "job" + i;
+                    $http({
+                        method: "GET",
+                        url: "https://onterim.firebaseio.com/joblist/" + indexString + ".json"
+                    }).then(function (ress) {
+                        $scope.jobList.push(ress.data);
+                        var thisUrl = "http://localhost:3000/backend/getdistance?origin=" + $scope.positionString + "&destination=" + ress.data.locationId;
+                        $http({
+                            method: 'GET',
+                            url: thisUrl
+                        }).then(function (ressss) {
+                            $scope.jobList[counter].distance = ressss.data.rows[0].elements[0].distance.text;
+                            if (firstLoad)
+                                $scope.setLoaded();
+                            counter++;
+                        })
+                    });
+                }
+                ;
+            };
+
+            $http({
+                method: "GET",
+                url: "https://onterim.firebaseio.com/joblist/jobAmount.json"
+            }).then(function (res) {
+                $scope.jobCount = res.data;
+                $http({
+                    method: 'POST',
+                    url: 'https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyApFGIipkwRe_OUSgy996K0ukg7gxNL4qM'
+                }).then(function (resss) {
+                    var currentLat = resss.data.location.lat;
+                    var currentLng = resss.data.location.lng;
+                    $scope.positionString = currentLat + "," + currentLng;
+                    if ($scope.jobsToLoad > $scope.jobCount)
+                        $scope.jobsToLoad = $scope.jobCount
+                    $scope.getJobs(0, $scope.jobsToLoad, true);
+                });
+            });
+        });
+    </script>
+</head>
+<body ng-app="app">
+<div ng-controller="JobController">
+    <section class="hero is-primary is-medium">
+        <!-- Hero header: will stick at the top -->
+        <div class="hero-head">
+            <header class="nav">
+                <div class="container">
+                    <div class="nav-left">
+                        <a class="nav-item" href="index.html">
+                            <h3 class="title">Onterim</h3>
+                        </a>
+                    </div>
+                    <span class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    </span>
+                    <div class="nav-right nav-menu">
+                        <a class="nav-item" href="index.html">
+                            Home
+                        </a>
+                        <a class="nav-item is-active" href="jobs.html">
+                            Jobs
+                        </a>
+                        <a class="nav-item" href="jobsNew.html">
+                            Create advert
+                        </a>
+                        <a class="nav-item" href="pyment.html">
+                            Subscription
+                        </a>
+                        <a class="nav-item" href="login.html">
+                            Login
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <progress class="progress is-primary" ng-value="loaded" max="100"
+                      style="margin: auto; display: table; width:200px; margin-top: 500px;"
+                      ng-show="showLoading"></progress>
+
+            <div class="columns  is-multiline">
+                <div ng-repeat="job in jobList" class="column is-one-third" style="margin-top: 10px">
+                    <div class="card" ng-show="showTiles">
+                        <header class="card-header">
+                            <p class="card-header-title">
+                                {{job.name}}
+                            </p>
+                        </header>
+                        <div class="card-content">
+                            <div class="content">
+                                <strong>{{job.location.main_text}}</strong>
+                                <br>
+                                {{job.description}}
+                                <br>
+                                pay: {{job.pay}} EUR/u
+                                <br>
+                                <small>{{job.location.second_text}} distance: {{job.distance}}</small>
+                            </div>
+                        </div>
+                        <footer class="card-footer">
+                            <a class="card-footer-item">Apply</a>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <p class="control">
+                    <button class="button is-primary" ng-click="loadMoreJobs(1)" ng-show="showTiles"
+                            style="margin: auto; display: table; margin-top: 50px">Load more
+                    </button>
+                </p>
+            </div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

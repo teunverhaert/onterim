@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Onterim | Subscriptions</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css.map">
+
+    <script>
+        var app = angular.module('app',[]);
+
+        parseParams = function() {
+            var params = {}, queryString = location.hash.substring(1), regex = /([^&=]+)=([^&]*)/g, m;
+            while (m = regex.exec(queryString)) {
+                params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+            }
+            return params;
+        };
+        app.controller("PaymentController", function ($scope,$http) {
+            var getToken = function(successCb) {
+                var request = {
+                    method: 'POST',
+                    url: 'https://api.stripe.com/v1/tokens',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Bearer sk_test_xM5s3QD6wu0NxtfFcigcPCNx'
+                    },
+                    data: 'card[number]=' + $scope.cardNumber + '&card[exp_month]=' + $scope.cardExpMonth + '&card[exp_year]=' + $scope.cardExpYear + '&card[cvc]=' + $scope.cardCvc
+                };
+                var errCb = function(err) {
+                    alert("Wrong " + JSON.stringify(err));
+                };
+                $http(request).then(function (data) {
+                    successCb(data["data"]["id"]); // Of data.data.id, is hetzelfde
+                }, errCb).catch(errCb);
+            };
+
+            var createCustomer = function(token, successCb) {
+                var request = {
+                    method: 'POST',
+                    url: 'https://api.stripe.com/v1/customers',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Bearer sk_test_xM5s3QD6wu0NxtfFcigcPCNx'
+                    },
+                    data: 'source=' + token
+                };
+                var errCb = function(err) {
+                    alert("Wrong " + JSON.stringify(err));
+                };
+                $http(request).then(function (data) {
+                    successCb(data.data.id);
+                }, errCb).catch(errCb);
+            };
+
+            var createSubscription = function(customer, plan, successCb) {
+                var request = {
+                    method: 'POST',
+                    url: 'https://api.stripe.com/v1/subscriptions',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Bearer sk_test_xM5s3QD6wu0NxtfFcigcPCNx'
+                    },
+                    data: 'plan=' + plan + '&customer=' + customer
+                };
+                var errCb = function(err) {
+                    alert("Wrong " + JSON.stringify(err));
+                };
+                $http(request).then(function (data) {
+                    successCb()
+                }, errCb).catch(errCb);
+            };
+
+            var subscribe = function (plan) {
+                getToken(function (token) {
+                    createCustomer(token, function (customer) {
+                        createSubscription(customer, plan, function (status) {
+                            alert("Subscribed!");
+                        });
+                    });
+                });
+            };
+            
+            $scope.confirm = function () {
+                if($scope.plan!=undefined){
+                    if($scope.checked){
+                        subscribe($scope.plan);
+                    }
+                    else{
+                        window.alert("Please confirm the terms and conditions");
+                    }
+                }
+            };
+
+            $scope.checked = false;
+
+            $scope.termsClick = function () {
+                if($scope.checked){
+                    $scope.checked = false;
+                }
+                else{
+                    $scope.checked = true;
+                }
+            }
+        });
+    </script>
+</head>
+<body ng-app="app">
+<div ng-controller="PaymentController">
+    <section class="hero is-primary is-medium">
+        <!-- Hero header: will stick at the top -->
+        <div class="hero-head">
+            <header class="nav">
+                <div class="container">
+                    <div class="nav-left">
+                        <a class="nav-item" href="index.html">
+                            <h3 class="title">Onterim</h3>
+                        </a>
+                    </div>
+                    <span class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    </span>
+                    <div class="nav-right nav-menu">
+                        <a class="nav-item" href="index.html">
+                            Home
+                        </a>
+                        <a class="nav-item" href="jobs.html">
+                            Jobs
+                        </a>
+                        <a class="nav-item" href="jobsNew.html">
+                            Create advert
+                        </a>
+                        <a class="nav-item is-active" href="pyment.html">
+                            Subscription
+                        </a>
+                        <a class="nav-item" href="login.html">
+                            Login
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+    </section>
+
+    <div class="container" style="margin-top: 20px">
+            <div class="field">
+                <p class="control">
+                    <label class="radio">
+                        <input type="radio" ng-model="plan" value="SimpleSS">
+                        Small business plan ($2.50)
+                    </label>
+                </p>
+            </div>
+
+            <div class="field">
+                <p class="control">
+                    <label class="radio">
+                        <input type="radio" ng-model="plan" value="MediumSS">
+                        Medium business plan ($5.00)
+                    </label>
+                </p>
+            </div>
+
+            <div class="field">
+                <p class="control">
+                    <label class="radio">
+                        <input type="radio" ng-model="plan" value="BigSS">
+                        Big business plan ($25.00)
+                    </label>
+                </p>
+            </div>
+
+            <div class="field">
+                <label class="label">Card number:</label>
+                <p class="control">
+                    <input class="input" type="text" placeholder="Ex: 4242424242424242" ng-model="cardNumber">
+                </p>
+            </div>
+
+            <div class="field">
+                <label class="label">Cvc:</label>
+                <p class="control">
+                    <input class="input" type="text" placeholder="Ex: 123" ng-model="cardCvc">
+                </p>
+            </div>
+
+            <div class="field">
+                <label class="label">Expiration date:</label>
+                <div class="field is-horizontal">
+                    <div class="field-body">
+                        <div class="field is-grouped">
+                            <p class="control">
+                                <input class="input" type="text" placeholder="Ex: 12" ng-model="cardExpMonth">
+                            </p>
+                            <p class="control">
+                                <input class="input" type="text" placeholder="Ex: 2018" ng-model="cardExpYear">
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <p class="control">
+                    <label class="checkbox">
+                        <input type="checkbox" ng-click="termsClick()">
+                        I agree to the <a href="#">terms and conditions</a>
+                    </label>
+                </p>
+            </div>
+
+            <div class="field">
+                <p class="control">
+                    <button class="button is-primary" ng-click="confirm()">Confirm</button>
+                </p>
+            </div>
+
+    </div>
+</div>
+</body>
+</html>

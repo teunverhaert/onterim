@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Onterim | New user</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular-route.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css.map">
+
+    <script>
+        var app = angular.module('app',[]);
+
+        parseParams = function() {
+            var params = {}, queryString = location.hash.substring(1), regex = /([^&=]+)=([^&]*)/g, m;
+            while (m = regex.exec(queryString)) {
+                params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+            }
+            return params;
+        };
+
+        app.controller('NewUserController', function ($scope,$http,$location) {
+            $scope.createAccount = function () {
+                var userlist;
+
+                var domain = "sandbox3adcb880167d4f96abbae711d9e604df.mailgun.org"
+
+                $http({
+                    method: "GET",
+                    url: "https://onterim.firebaseio.com/users.json"
+                }).then(function (res) {
+                    userlist = res.data;
+                    userlist.userAmount++;
+                    var userNameIndex = "user" + (userlist.userAmount - 1);
+                    var newUser = {
+                        username: $scope.user,
+                        usermail: $scope.mail,
+                        password: $scope.password,
+                        activated: false,
+                        imageUrl: "https://firebasestorage.googleapis.com/v0/b/onterim.appspot.com/o/profile-icon-9.jpg?alt=media&token=03ca710d-5121-4995-9690-3790cc528530"
+                    }
+                    userlist[userNameIndex] = newUser;
+                    var jsonString = JSON.stringify(userlist);
+                    console.log(jsonString);
+                    $http({
+                        method: 'PUT',
+                        url: "https://onterim.firebaseio.com/users.json",
+                        data: jsonString,
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    }).then(function () {
+                        window.alert("Account created!");
+                        document.location.href = 'http://localhost:3000/login';
+                    })
+                });
+            }
+        });
+    </script>
+</head>
+<body ng-app="app">
+<div ng-controller="NewUserController">
+    <section class="hero is-primary is-medium">
+        <!-- Hero header: will stick at the top -->
+        <div class="hero-head">
+            <header class="nav">
+                <div class="container">
+                    <div class="nav-left">
+                        <a class="nav-item" href="index.html">
+                            <h3 class="title">Onterim</h3>
+                        </a>
+                    </div>
+                    <span class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    </span>
+                    <div class="nav-right nav-menu">
+                        <a class="nav-item" href="index.html">
+                            Home
+                        </a>
+                        <a class="nav-item" href="jobs.html">
+                            Jobs
+                        </a>
+                        <a class="nav-item" href="jobsNew.html">
+                            Create advert
+                        </a>
+                        <a class="nav-item" href="pyment.html">
+                            Subscription
+                        </a>
+                        <a class="nav-item is-active" href="login.html">
+                            Login
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+    </section>
+
+    <div class="container" style="margin-top: 20px">
+            <div>
+                <div class="field">
+                    <label class="label">Username:</label>
+                    <p class="control">
+                        <input class="input" type="text" placeholder="username" ng-model="user">
+                    </p>
+                    <label class="label">Email address:</label>
+                    <p class="control">
+                        <input class="input" type="email" placeholder="user@email.com" ng-model="mail">
+                    </p>
+                    <label class="label">Password:</label>
+                    <p class="control">
+                        <input class="input" type="password" placeholder="password" ng-model="password">
+                    </p>
+
+                    <label class="label">Repeat password:</label>
+                    <p class="control">
+                        <input class="input" type="password" placeholder="password" ng-model="passwordRpt">
+                    </p>
+                </div>
+                <a class="button" ng-click="createAccount()">
+                    <span>Create account</span>
+                </a>
+            </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Onterim | Login complete</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css.map">
+
+    <script>
+        var app = angular.module('app',[]);
+
+        parseParams = function() {
+            var params = {}, queryString = location.hash.substring(1), regex = /([^&=]+)=([^&]*)/g, m;
+            while (m = regex.exec(queryString)) {
+                params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+            }
+            return params;
+        };
+
+        app.controller('VerifController', function ($scope,$http,$location) {
+            $scope.loggedIn = false;
+            $http({
+                method:'GET',
+                url:'http://localhost:3000/backend/getloggedIn'
+            }).then(function (res) {
+                console.log(res);
+                $scope.user = res.data;
+                if($scope.user){
+                    $scope.loggedIn = true;
+                }
+            });
+        });
+    </script>
+
+</head>
+<body ng-app="app">
+<div ng-controller="VerifController">
+    <section class="hero is-primary is-medium">
+        <!-- Hero header: will stick at the top -->
+        <div class="hero-head">
+            <header class="nav">
+                <div class="container">
+                    <div class="nav-left">
+                        <a class="nav-item" href="index.html">
+                            <h3 class="title">Onterim</h3>
+                        </a>
+                    </div>
+                    <span class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    </span>
+                    <div class="nav-right nav-menu">
+                        <a class="nav-item" href="index.html">
+                            Home
+                        </a>
+                        <a class="nav-item" href="jobs.html">
+                            Jobs
+                        </a>
+                        <a class="nav-item" href="jobsNew.html">
+                            Create advert
+                        </a>
+                        <a class="nav-item" href="pyment.html">
+                            Subscription
+                        </a>
+                        <a class="nav-item is-active" href="login.html">
+                            Login
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+    </section>
+    <article class="message" style="margin: auto; width: 20%; margin-top: 40px">
+        <div class="message-body">
+            <div ng-show="loggedIn">
+                <div>
+                    <h2 style="margin: auto; display: table">Welcome {{user.username}}</h2>
+                    <img ng-src="{{user.imageUrl}}" style="width:150px;height:150px;margin: auto; display: table; margin-top: 15px">
+                </div>
+                <a class="button" href="index.html" style="margin: auto; display: table; margin-top: 20px">
+                    <span>Continue</span>
+                </a>
+            </div>
+        </div>
+    </article>
+</div>
+</body>
+</html>

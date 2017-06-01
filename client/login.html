@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Onterim | Login</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular-route.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css.map">
+    <script>
+        var app = angular.module('app',[]);
+
+        parseParams = function() {
+            var params = {}, queryString = location.hash.substring(1), regex = /([^&=]+)=([^&]*)/g, m;
+            while (m = regex.exec(queryString)) {
+                params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+            }
+            return params;
+        };
+
+        app.controller('LoginController', function ($scope,$http,$location) {
+            $scope.SignInFacebook = function () {
+                window.location.href = "https://www.facebook.com/dialog/oauth?client_id=216080418884279&response_type=token&redirect_uri=http://localhost:3000/login/";
+            };
+
+            var str = JSON.stringify(parseParams());
+            if(str){
+                var replaced = str.replace("/","");
+                $scope.token = JSON.parse(replaced).access_token;
+                $http({
+                    method:'GET',
+                    url:'https://graph.facebook.com/v2.5/me?fields=name&edges=picture&access_token='+$scope.token
+                }).then(function (res) {
+                    console.log(res.data.name);
+                    $scope.name = res.data.name;
+                    $scope.imageUrl = 'https://graph.facebook.com/'+res.data.id+'/picture?type=large';
+                    $http.post('http://localhost:3000/backend/loggedIn', {'username':$scope.name,'imageUrl':$scope.imageUrl}).success(function (res) {
+                        document.location.href = 'http://localhost:3000/loginVerification';
+                    });
+                    //
+                });
+            };
+
+            $scope.loginError = false;
+
+            $scope.loginDb = function () {
+                $http({
+                    method: "GET",
+                    url: "https://onterim.firebaseio.com/users/userAmount.json"
+                }).then(function (res) {
+                    var userCount = res.data;
+                    $http({
+                        method: "GET",
+                        url: "https://onterim.firebaseio.com/users.json"
+                    }).then(function (ress) {
+                        var found = false;
+                        var index = 0;
+                        var user;
+                        while(!found||index<userCount){
+                            var indexString = "user"+index;
+                            if(ress.data[indexString].username==$scope.user||ress.data[indexString].usermail==$scope.user&&ress.data[indexString].activated){
+                                found = true;
+                                user = ress.data[indexString];
+                                if(user.password==$scope.password){
+                                    $http.post('http://localhost:3000/backend/loggedIn', {'username':user.username,'imageUrl':user.imageUrl}).success(function (res) {
+                                        document.location.href = 'http://localhost:3000/loginVerification';
+                                    });
+                                };
+                            };
+                            index++;
+                            if(index>userCount&&!found)
+                                $scope.loginError = True;
+                            console.log(found);
+                        }
+                    });
+                })
+            }
+        });
+    </script>
+</head>
+<body ng-app="app">
+<div ng-controller="LoginController">
+    <section class="hero is-primary is-medium">
+        <!-- Hero header: will stick at the top -->
+        <div class="hero-head">
+            <header class="nav">
+                <div class="container">
+                    <div class="nav-left">
+                        <a class="nav-item" href="index.html">
+                            <h3 class="title">Onterim</h3>
+                        </a>
+                    </div>
+                    <span class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    </span>
+                    <div class="nav-right nav-menu">
+                        <a class="nav-item" href="index.html">
+                            Home
+                        </a>
+                        <a class="nav-item" href="jobs.html">
+                            Jobs
+                        </a>
+                        <a class="nav-item" href="jobsNew.html">
+                            Create advert
+                        </a>
+                        <a class="nav-item" href="pyment.html">
+                            Subscription
+                        </a>
+                        <a class="nav-item is-active" href="login.html">
+                            Login
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+    </section>
+    <article class="message" style="margin: auto; width: 20%; margin-top: 40px">
+        <div class="message-body">
+            <div>
+                <a class="button is-info" style="margin: auto; display: table">
+                    <span class="icon">
+                        <i class="fa fa-facebook"></i>
+                    </span>
+                    <span ng-click="SignInFacebook()">Login with facebook</span>
+                </a>
+            </div>
+            <h4 style="margin: auto; display: table; margin-top: 20px; margin-bottom: 10px" >OR</h4>
+            <div>
+                <div class="field">
+                    <p ng-show="loginError">Username or password incorrect.</p>
+                    <div style="margin: auto; display: table">
+                        <label class="label">Username</label>
+                        <p class="control">
+                            <input class="input" type="text" placeholder="username" ng-model="user">
+                        </p>
+                    </div>
+                    <div style="margin: auto; display: table">
+                        <label class="label">Password</label>
+                        <p class="control">
+                            <input class="input" type="password" placeholder="password" ng-model="password">
+                        </p>
+                    </div>
+                </div>
+                <a class="button" ng-click="loginDb()"  style="margin: auto; display: table">
+                    <span>Login</span>
+                </a>
+            </div>
+            <a href="newUser.html" style="margin: auto; display: table; margin-top: 20px">Don't have an account? sign in here</a>
+        </div>
+    </article>
+</div>
+</body>
+</html>

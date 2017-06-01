@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Onterim | New advert</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.4.1/css/bulma.min.css.map">
+
+    <script>
+        var app = angular.module('app',[]);
+
+        app.controller('NewJobController', function ($scope,$http) {
+
+            $scope.confirm = function () {
+                var joblist;
+
+                $http({
+                    method: "GET",
+                    url: "https://onterim.firebaseio.com/joblist.json"
+                }).then(function (res) {
+                    joblist = res.data;
+                    joblist.jobAmount++;
+                    var jobNameIndex = "job"+(joblist.jobAmount-1);
+                    var newJob = {
+                        name:$scope.jobname,
+                        description: $scope.jobdescription,
+                        pay: $scope.jobpay,
+                        location: {
+                            main_text: $scope.mainText,
+                            second_text: $scope.secondText
+                        },
+                        locationId: $scope.locationId
+                    }
+                    joblist[jobNameIndex] = newJob;
+                    var jsonString = JSON.stringify(joblist);
+                    console.log(jsonString);
+                    $http({
+                        method: 'PUT',
+                        url: "https://onterim.firebaseio.com/joblist.json",
+                        data: jsonString,
+                        headers: {
+                            "Content-Type":"application/json"
+                        }
+                    }).then( function () {
+                        document.location.href = 'http://localhost:3000/jobs';
+                    })
+                });
+            };
+
+            $scope.autocompleteLocation = function () {
+                var location = $scope.jobplace;
+                $scope.autoLocations = [];
+                $http({
+                    method:'GET',
+                    url:'http://localhost:3000/backend/autocomplete?location='+location
+                }).then(function (res) {
+                    var length = res.data.predictions.length;
+                    for(var i=0;i<length;i++){
+                        console.log(res.data.predictions[i].structured_formatting);
+                        $scope.autoLocations.push(res.data.predictions[i]);
+                    }
+                });
+            };
+
+            $scope.autoLocations = [];
+
+            $scope.acceptPlace = function (place) {
+                console.log(place.place_id);
+                $scope.locationId= place.place_id;
+                $scope.mainText = place.structured_formatting.main_text;
+                $scope.secondText = place.structured_formatting.secondary_text;
+                $scope.autoLocations = [];
+                $scope.jobplace = $scope.mainText+','+$scope.secondText;
+            };
+        });
+    </script>
+</head>
+<body ng-app="app">
+<div ng-controller="NewJobController">
+    <section class="hero is-primary is-medium">
+        <!-- Hero header: will stick at the top -->
+        <div class="hero-head">
+            <header class="nav">
+                <div class="container">
+                    <div class="nav-left">
+                        <a class="nav-item" href="index.html">
+                            <h3 class="title">Onterim</h3>
+                        </a>
+                    </div>
+                    <span class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    </span>
+                    <div class="nav-right nav-menu">
+                        <a class="nav-item" href="index.html">
+                            Home
+                        </a>
+                        <a class="nav-item" href="jobs.html">
+                            Jobs
+                        </a>
+                        <a class="nav-item is-active" href="jobsNew.html">
+                            Create advert
+                        </a>
+                        <a class="nav-item" href="pyment.html">
+                            Subscription
+                        </a>
+                        <a class="nav-item" href="login.html">
+                            Login
+                        </a>
+                    </div>
+                </div>
+            </header>
+        </div>
+    </section>
+
+    <div class="container" style="margin-top: 20px">
+
+
+
+            <div class="field">
+                <label class="label">Name:</label>
+                <p class="control">
+                    <input class="input" type="text" ng-model="jobname">
+                </p>
+            </div>
+
+            <div class="field">
+                <label class="label">Description:</label>
+                <p class="control">
+                    <textarea class="textarea" ng-model="jobdescription"></textarea>
+                </p>
+            </div>
+
+            <div class="field">
+                <label class="label">Pay per hour (EUR):</label>
+                <p class="control">
+                    <input class="input" type="text" ng-model="jobpay">
+                </p>
+            </div>
+
+            <div class="field">
+                <label class="label">Location:</label>
+                <div class="field is-horizontal">
+                    <div class="field-body">
+                        <div class="field is-grouped">
+                            <p class="control is-expanded">
+                                <input class="input" type="text" ng-model="jobplace" placeholder="Ex: Shltr, Antwerp">
+                            </p>
+                            <p class="control">
+                                <button class="button is-primary" ng-click="autocompleteLocation()">Search</button>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div ng-repeat="place in autoLocations">
+                <div class="field">
+                    <div class="field is-horizontal">
+                        <div class="field-body">
+                            <div class="field is-grouped">
+                                <p class="control">
+                                    <a href="#" ng-click="acceptPlace(place)">{{place.description}}</a>
+                                </p>
+                                <br>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <p class="control">
+                    <button class="button is-primary" ng-click="confirm()">Confirm</button>
+                </p>
+            </div>
+
+    </div>
+</div>
+</body>
+</html>
